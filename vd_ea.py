@@ -174,3 +174,210 @@ class MediaToolkitApp:
         self.status_log_text.insert(tk.END, f"{message}\n")
         self.status_log_text.yview(tk.END)
         self.status_log_text.config(state=tk.DISABLED)
+
+    def show_processing_message(self):      # Show a message box to indicate processing is ongoing.
+        self.processing_window = tk.Toplevel(self.root)
+        self.processing_window.title("Processing")
+        self.processing_window.geometry("300x150")
+        self.processing_window.config(bg="#2E2E2E")
+        self.processing_label = tk.Label(self.processing_window, text="Please wait...\nProcessing your request", font=("Arial", 14), bg="#2E2E2E", fg="white")
+        self.processing_label.pack(expand=True)
+
+    def close_processing_message(self):     # Close the processing message window.
+        self.processing_window.destroy()
+
+    def load_and_play_video_ui(self):       # Allow the user to load and play a video in the interface.
+        self.clear_main_area_top()
+        self.create_input_field(self.main_area_top,self.translate ("enter_video_file"))
+        video_button = tk.Button(self.main_area_top, text=self.translate ("select_video"), command=self.select_video, font=("Arial", 12), bg="#4CAF50", fg="white", width=20, pady=10)
+        video_button.pack(pady=10)
+
+        self.video_label = tk.Label(self.main_area_top, text=self.translate ("no_select"), font=("Arial", 12), bg="#3A3A3A", fg="white")
+        self.video_label.pack(pady=10)
+
+        def play_video():       # Play the selected video in the Tkinter window.
+            if not self.video_path:
+                messagebox.showerror("Error", "Please select a video first.")
+                return
+
+            if not self.playing:
+                self.playing = True
+                self.video_capture = cv2.VideoCapture(self.video_path)
+                self.play_video_stream()
+
+        self.create_action_button(self.main_area_top,self.translate ("play_video"), play_video)
+
+    # Modify all the function labels to use the `self.translate()` method
+    def download_video_ui(self):
+        self.clear_main_area_top()
+        self.create_input_field(self.main_area_top, self.translate("enter_video_file"))
+        url_entry = self.create_url_entry(self.main_area_top)
+
+        def download_video():       # Download Video from YouTube
+            url = url_entry.get()
+            if not url:
+                messagebox.showerror(self.translate("error"), self.translate("error") + " Please enter a YouTube URL!")
+                return
+            download_path = filedialog.askdirectory()
+            if not download_path:
+                return
+
+            self.show_processing_message()
+            self.update_status_log(self.translate("download"))
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': f'{download_path}/%(title)s.%(ext)s',
+                'progress_hooks': [self.progress_hook],
+            }
+
+            threading.Thread(target=self.download_media, args=(url, ydl_opts)).start()
+
+
+        self.create_action_button(self.main_area_top, self.translate("download"), download_video)
+
+    def download_audio_ui(self):        # Download Audio from YouTube and save as mp3
+        self.clear_main_area_top()
+        self.create_input_field(self.main_area_top,self.translate ("enter_mp3"))
+        url_entry = self.create_url_entry(self.main_area_top)
+
+        def download_audio():
+            url = url_entry.get()
+            if not url:
+                messagebox.showerror(self.translate("error"), self.translate("error") + " Please enter a YouTube URL!")
+                return
+            download_path = filedialog.askdirectory()
+            if not download_path:
+                return
+
+            self.show_processing_message()
+            self.update_status_log(self.translate("download"))
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'outtmpl': f'{download_path}/%(title)s.%(ext)s',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
+            threading.Thread(target=self.download_media, args=(url, ydl_opts)).start()
+
+
+        self.create_action_button(self.main_area_top, self.translate("download"), download_audio)
+
+
+    def download_playlist_ui(self):     # Download Playlist from YouTube 
+        self.clear_main_area_top()
+        self.create_input_field(self.main_area_top,self.translate ("enter_playlist"))
+        url_entry = self.create_url_entry(self.main_area_top)
+
+        def download_playlist():
+            url = url_entry.get()
+            if not url:
+                messagebox.showerror(self.translate("error"), self.translate("error") + " Please enter a playlist URL!")
+                return
+            download_path = filedialog.askdirectory()
+            if not download_path:
+                return
+
+            self.show_processing_message()
+            self.update_status_log(self.translate ,("download"))
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': f'{download_path}/%(title)s.%(ext)s',
+                'progress_hooks': [self.progress_hook],
+            }
+
+            threading.Thread(target=self.download_media, args=(url, ydl_opts)).start()
+
+        self.create_action_button(self.main_area_top,self.translate("download"), download_playlist)
+
+    def download_facebook_video_ui(self):       # Download Video from Facebook
+        self.clear_main_area_top()
+        self.create_input_field(self.main_area_top,self.translate ("enter_Facebook_Video"))
+        url_entry = self.create_url_entry(self.main_area_top)
+
+        def download_facebook_video():
+            url = url_entry.get()
+            if not url:
+                messagebox.showerror(self.translate("error"), self.translate("error") + "Please enter a Facebook video URL!")
+                return
+            download_path = filedialog.askdirectory()
+            if not download_path:
+                return
+
+            self.show_processing_message()
+            self.update_status_log(self.translate,("Starting Facebook video download..."))
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': f'{download_path}/%(title)s.%(ext)s',
+                'progress_hooks': [self.progress_hook],
+            }
+
+            threading.Thread(target=self.download_media, args=(url, ydl_opts)).start()
+
+        self.create_action_button(self.main_area_top,self.translate ("download"), download_facebook_video)
+
+    def download_media(self, url, ydl_opts):        # Handle downloading media (audio/video).
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+                self.close_processing_message()
+                messagebox.showinfo("Success", "Download complete!")
+                self.update_status_log("Download complete.")
+        except Exception as e:
+            self.close_processing_message()
+            messagebox.showerror("Error", f"Error during download: {e}")
+            self.update_status_log(f"Error: {e}")
+
+
+    def progress_hook(self, d):     # Callback function for download progress.
+        if d['status'] == 'downloading':
+            self.update_status_log(f"Downloading: {d['filename']} - {d['downloaded_bytes'] / 1024 / 1024:.2f} MB")
+    # --- Extract Image from Video ---
+    def extract_image_ui(self):
+        self.clear_main_area_top()
+        self.create_input_field(self.main_area_top,self.translate ("enter_video_file"))
+        video_button = tk.Button(self.main_area_top, 
+        text= self.translate ("select_video"),
+            command=self.select_video, 
+            font=("Arial", 12),
+            bg="#4CAF50", 
+            fg="white", 
+            width=20, 
+            pady=10)
+        video_button.pack(pady=10)
+
+        self.video_label = tk.Label(self.main_area_top, text=self.translate ("no_select"), font=("Arial", 12), bg="#3A3A3A", fg="white")
+        self.video_label.pack(pady=10)
+
+        time_label = tk.Label(self.main_area_top, text= self.translate ("enter_time_for_image"), font=("Arial", 12), bg="#3A3A3A", fg="white")
+        time_label.pack(pady=5)
+
+        self.time_entry = tk.Entry(self.main_area_top, font=("Arial", 12))
+        self.time_entry.pack(pady=10)
+
+
+    def extract_image():  
+        time = self.time_entry.get()
+        if not time:
+            messagebox.showerror("Error",messagebox.showerror(self.translate("error"), self.translate("error") + "Please enter a valid time."))
+            return
+
+
+        try:
+            time = float(time)
+        except ValueError:
+            messagebox.showerror("Error",messagebox.showerror(self.translate("error"), self.translate("error") + "Time must be a number."))
+            return
+
+        output_path = filedialog.askdirectory()
+        if not output_path:
+            return
+
+        self.show_processing_message()
+        self.update_status_log(self.translate ("extract_image"))
+
+        threading.Thread(target=self.extract_image_task, args=(output_path, time)).start()
+
+    self.create_action_button(self.main_area_top,self.translate ("extract_image"), extract_image)
